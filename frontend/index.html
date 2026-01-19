@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Retina Guard | Next-Gen Diagnostics</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* DARK MODE (Default) */
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #22d3ee;
+            --danger: #f87171;
+            --success: #4ade80;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --orb-opacity: 0.4;
+            
+            /* NEW: Solid Chat Background for Dark Mode */
+            --chat-bg: #0f172a; 
+        }
+
+        /* LIGHT MODE OVERRIDES */
+        body.light-mode {
+            --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(56, 189, 248, 0.2);
+            --primary: #0284c7;
+            --secondary: #6366f1;
+            --accent: #0ea5e9;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --orb-opacity: 0.15;
+            
+            /* NEW: Solid Chat Background for Light Mode */
+            --chat-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        /* --- BACKGROUND ANIMATION --- */
+        .bg-orb { position: fixed; border-radius: 50%; filter: blur(100px); z-index: -1; opacity: var(--orb-opacity); transition: opacity 0.5s ease; }
+        .orb-1 { width: 500px; height: 500px; background: var(--primary); top: -100px; left: -100px; animation: float 15s infinite alternate; }
+        .orb-2 { width: 400px; height: 400px; background: var(--secondary); bottom: -50px; right: -50px; animation: float 12s infinite alternate-reverse; }
+
+        .grid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: linear-gradient(var(--glass-border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
+            background-size: 40px 40px; opacity: 0.1; z-index: -1; pointer-events: none;
+        }
+
+        @keyframes float { from { transform: translate(0, 0); } to { transform: translate(40px, 60px); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.6s ease forwards; }
+
+        /* --- LANDING PAGE --- */
+        #landingPage {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 20px; text-align: center;
+        }
+
+        header { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
+
+        .nav-controls-home {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; padding: 20px 0; pointer-events: auto;
+        }
+
+        .hero-badge {
+            background: rgba(56, 189, 248, 0.1); color: var(--primary);
+            padding: 8px 16px; border-radius: 30px; border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase;
+            backdrop-filter: blur(5px); margin: 0;
+        }
+
+        .hero-title {
+            font-size: 4rem; line-height: 1.1; font-weight: 700;
+            margin-bottom: 20px; margin-top: 40px;
+            background: linear-gradient(to right, var(--text-main), var(--primary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub { font-size: 1.2rem; color: var(--text-muted); max-width: 600px; margin-bottom: 40px; }
+
+        .cta-btn {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: #fff; padding: 18px 50px; border-radius: 50px;
+            font-size: 1.2rem; font-weight: 600; text-decoration: none; border: none;
+            cursor: pointer; box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .cta-btn:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(56, 189, 248, 0.5); }
+
+        .features-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px; width: 100%; max-width: 1000px; margin-top: 60px;
+        }
+
+        .feature-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            padding: 30px; border-radius: 20px; text-align: left; transition: 0.3s;
+        }
+        .feature-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .f-icon { font-size: 2rem; color: var(--accent); margin-bottom: 15px; }
+        .feature-card h3 { font-size: 1.2rem; margin-bottom: 10px; color: var(--text-main); }
+        .feature-card p { font-size: 0.95rem; color: var(--text-muted); line-height: 1.5; }
+
+        /* --- APP PAGE --- */
+        #appPage {
+            width: 100%; display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; position: relative;
+        }
+
+        .drag-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            z-index: 1000; display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            border: 4px dashed var(--primary);
+        }
+        .drag-overlay.active { display: flex; animation: fadeIn 0.3s; }
+        .drag-overlay h2 { color: var(--primary); font-size: 2.5rem; margin-top: 20px; }
+
+        .app-header-container {
+            width: 100%; max-width: 1200px; text-align: center;
+            padding: 40px 20px; position: relative;
+        }
+
+        .nav-controls {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; margin-bottom: 20px;
+        }
+
+        .back-btn {
+            pointer-events: auto;
+            background: rgba(56, 189, 248, 0.15); border: 1px solid var(--primary);
+            color: var(--primary); padding: 8px 18px; border-radius: 20px;
+            font-size: 0.95rem; font-weight: 600; cursor: pointer;
+            transition: all 0.3s; display: flex; align-items: center; gap: 8px;
+            backdrop-filter: blur(5px);
+        }
+        .back-btn:hover { background: var(--primary); color: white; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+
+        .theme-toggle {
+            pointer-events: auto; background: var(--glass-bg);
+            border: 1px solid var(--glass-border); color: var(--text-main);
+            width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; transition: all 0.3s;
+        }
+        .theme-toggle:hover { background: var(--primary); color: white; transform: rotate(15deg); }
+
+        .app-title {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .workspace {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            align-items: flex-start; gap: 40px; width: 90%; max-width: 1200px;
+            padding-bottom: 100px;
+        }
+
+        .image-section { flex: 1; min-width: 350px; max-width: 450px; display: flex; flex-direction: column; gap: 20px; }
+
+        .upload-card {
+            background: var(--glass-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 30px; width: 100%; text-align: center; position: relative;
+            z-index: 2; transition: background 0.3s;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--glass-border); border-radius: 15px;
+            padding: 40px 20px; cursor: pointer; transition: 0.3s; color: var(--text-muted);
+        }
+        .drop-zone:hover { border-color: var(--primary); background: rgba(56, 189, 248, 0.05); }
+
+        #previewContainer { margin-top: 20px; display: none; }
+        #imagePreview {
+            width: 100%; border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border);
+        }
+
+        .btn-base {
+            border: none; padding: 12px 30px; border-radius: 30px;
+            font-weight: 600; font-size: 1rem; cursor: pointer;
+            margin-top: 20px; transition: 0.3s; width: 100%;
+        }
+        .analyze-btn { background: var(--primary); color: #fff; }
+        .analyze-btn:hover { box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); filter: brightness(1.1); }
+        .reset-btn { background: var(--secondary); color: #fff; display: none; }
+        .reset-btn:hover { box-shadow: 0 0 20px rgba(129, 140, 248, 0.4); filter: brightness(1.1); }
+
+        .diagram-section {
+            flex: 1.5; min-width: 350px; display: none; flex-direction: column;
+            gap: 20px; position: relative; padding-left: 40px;
+        }
+
+        .diagram-spine {
+            position: absolute; left: 0; top: 20px; bottom: 20px; width: 4px;
+            background: linear-gradient(to bottom, var(--primary), var(--success));
+            border-radius: 2px; opacity: 0; transform-origin: top; transition: opacity 1s;
+        }
+
+        .info-box {
+            background: var(--glass-bg); backdrop-filter: blur(16px);
+            border-radius: 16px; padding: 20px; position: relative;
+            opacity: 0; transform: translateX(30px);
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid var(--glass-border);
+        }
+
+        .info-box::before {
+            content: ''; position: absolute; left: -40px; top: 50%;
+            width: 40px; height: 2px; background: var(--glass-border); z-index: -1;
+        }
+        .info-box::after {
+            content: ''; position: absolute; left: -44px; top: 50%; transform: translateY(-50%);
+            width: 12px; height: 12px; border-radius: 50%;
+            background: var(--text-main); box-shadow: 0 0 10px var(--primary);
+        }
+
+        .main-result-box { border: 1px solid var(--primary); background: rgba(56, 189, 248, 0.05); }
+        .related-box { border: 1px solid var(--danger); background: rgba(248, 113, 113, 0.05); }
+        .related-box h3 { color: var(--danger); }
+        .related-box::after { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        .tips-box { border: 1px solid var(--success); background: rgba(74, 222, 128, 0.05); }
+        .tips-box h3 { color: var(--success); }
+        .tips-box::after { background: var(--success); box-shadow: 0 0 10px var(--success); }
+
+        .diagram-section.active .diagram-spine { opacity: 1; height: 100%; }
+        .diagram-section.active .info-box:nth-child(2) { opacity: 1; transform: translateX(0); transition-delay: 0.2s; }
+        .diagram-section.active .info-box:nth-child(3) { opacity: 1; transform: translateX(0); transition-delay: 0.4s; }
+        .diagram-section.active .info-box:nth-child(4) { opacity: 1; transform: translateX(0); transition-delay: 0.6s; }
+        .diagram-section.active .info-box:nth-child(5) { opacity: 1; transform: translateX(0); transition-delay: 0.8s; }
+
+        h2 { font-size: 1.8rem; margin-bottom: 5px; color: var(--text-main); }
+        h3 { font-size: 1.1rem; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
+        p, li { font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; }
+
+        /* --- CHATBOT (FIXED & SOLID) --- */
+        .chatbot-btn {
+            position: fixed; /* Ensures it stays in place */
+            bottom: 30px; right: 30px;
+            width: 60px; height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; color: #fff; cursor: pointer;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.4);
+            z-index: 10002; /* Top Layer */
+            transition: transform 0.2s;
+        }
+        .chatbot-btn:hover { transform: scale(1.1); }
+
+        .chat-window {
+            position: fixed; /* Fixed relative to viewport */
+            bottom: 100px; right: 30px;
+            width: 350px; height: 500px;
+            
+            /* SOLID BACKGROUND (No Transparency) */
+            background-color: var(--chat-bg); 
+            
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            display: flex; flex-direction: column;
+            transform: translateY(20px); opacity: 0;
+            pointer-events: none; transition: all 0.3s ease;
+            z-index: 10001; /* Layer under button but over content */
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .chat-window.open { transform: translateY(0); opacity: 1; pointer-events: all; }
+
+        .chat-header {
+            padding: 15px; background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; color: var(--text-main);
+        }
+
+        .chat-body {
+            flex: 1; padding: 15px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .chat-footer {
+            padding: 15px; display: flex; gap: 10px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .chat-input {
+            flex: 1; background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            padding: 10px; border-radius: 5px;
+            color: var(--text-main); outline: none;
+        }
+
+        .bot-msg {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px; border-radius: 10px;
+            align-self: flex-start; max-width: 80%;
+            font-size: 0.9rem; color: var(--text-main);
+            border: 1px solid var(--glass-border);
+        }
+
+        .user-msg {
+            background: var(--primary); color: #fff;
+            padding: 10px; border-radius: 10px;
+            align-self: flex-end; max-width: 80%; font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.5rem; }
+            .diagram-section { padding-left: 0; margin-top: 20px; }
+            .diagram-spine, .info-box::before, .info-box::after { display: none; }
+            .info-box { transform: none; opacity: 1; margin-bottom: 15px; }
+            .nav-controls { position: relative; top: 0; margin-bottom: 10px; }
+            header h1 { margin-top: 10px; }
+            .chat-window { width: 90%; right: 5%; bottom: 100px; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="grid-overlay"></div>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <div id="landingPage">
+        <header>
+            <div class="nav-controls-home">
+                <div class="hero-badge"><i class="fas fa-sparkles"></i> AI-Powered Healthcare</div>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <h1 class="hero-title">Early Detection.<br>Instant Results.</h1>
+        <p class="hero-sub">Leverage state-of-the-art Deep Learning to analyze retinal scans for Cataracts, Glaucoma, and Diabetic Retinopathy with 98% clinical accuracy.</p>
+        <button class="cta-btn" onclick="startApp()">Start Diagnosis <i class="fas fa-arrow-right" style="margin-left: 10px;"></i></button>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="f-icon"><i class="fas fa-brain"></i></div>
+                <h3>Deep Learning Core</h3>
+                <p>Powered by a Convolutional Neural Network trained on over 100,000 clinically labeled retinal images.</p>
+            </div>
+            <div class="feature-card">
+                <div class="f-icon"><i class="fas fa-bolt"></i></div>
+                <h3>Real-Time Analysis</h3>
+                <p>Get instant results within seconds. Visualized confidence scores and risk assessments immediately.</p>
+            </div>
+            <div class="feature-card">
+                <div class="f-icon"><i class="fas fa-user-md"></i></div>
+                <h3>Smart Assistant</h3>
+                <p>Integrated medical chatbot to explain results, provide tips, and answer your eye health questions.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="appPage" class="hidden">
+        <div id="dragOverlay" class="drag-overlay">
+            <i class="fas fa-file-upload fa-5x" style="color: var(--primary);"></i>
+            <h2>Drop new scan here</h2>
+        </div>
+
+        <div class="app-header-container">
+            <div class="nav-controls">
+                <button class="back-btn" onclick="backToHome()"><i class="fas fa-chevron-left"></i> Back</button>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode"><i class="fas fa-moon"></i></button>
+            </div>
+            <h1 class="app-title"><i class="fas fa-eye"></i> AI Retina Guard</h1>
+            <p>Upload a retinal scan image to begin analysis</p>
+        </div>
+
+        <div class="workspace">
+            <div class="image-section">
+                <div class="upload-card">
+                    <div class="drop-zone" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt fa-3x" style="color: var(--primary); margin-bottom: 10px;"></i>
+                        <p>Drag & Drop or Click to Upload</p>
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                    </div>
+                    <div id="previewContainer">
+                        <img id="imagePreview" src="" alt="Scan">
+                        <button id="analyzeBtn" class="btn-base analyze-btn" onclick="analyzeImage()"><i class="fas fa-microscope"></i> Start Analysis</button>
+                        <button id="newScanBtn" class="btn-base reset-btn" onclick="resetScan()"><i class="fas fa-redo"></i> Start New Scan</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="diagram-section" id="diagramSection">
+                <div class="diagram-spine"></div>
+                <div class="info-box main-result-box">
+                    <h3 style="color: var(--primary)"><i class="fas fa-clipboard-check"></i> Diagnosis Result</h3>
+                    <h2 id="resClass">Detecting...</h2>
+                    <div style="background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; margin-top: 5px; overflow: hidden;">
+                        <div id="resConfBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 1s;"></div>
+                    </div>
+                    <p id="resConfText" style="margin-top: 5px; font-size: 0.8rem;">Confidence: 0%</p>
+                </div>
+                <div class="info-box desc-box">
+                    <h3><i class="fas fa-info-circle"></i> Description</h3>
+                    <p id="resDesc">...</p>
+                </div>
+                <div class="info-box related-box" id="boxRelated">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Related Risks</h3>
+                    <p id="resRelated">...</p>
+                </div>
+                <div class="info-box tips-box">
+                    <h3><i class="fas fa-shield-heart"></i> Recommended Actions</h3>
+                    <ul id="resTips"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="chatBtn" class="chatbot-btn" onclick="toggleChat()" style="display: none;">
+        <i class="fas fa-comment-medical"></i>
+    </div>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header"><span>AI Assistant</span><i class="fas fa-times" onclick="toggleChat()" style="cursor: pointer"></i></div>
+        <div class="chat-body" id="chatBody">
+            <div class="bot-msg">Hello! I've analyzed your scan. How can I help?</div>
+        </div>
+        <div class="chat-footer">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask a question..." onkeypress="handleEnter(event)">
+            <i class="fas fa-paper-plane" style="color: var(--primary); cursor: pointer; align-self: center;" onclick="sendMessage()"></i>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://joshua813759753-eye-dieses-detection.hf.space";
+        let storedFile = null;
+        let currentContext = "General Eye Health";
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const icon = document.querySelector('.theme-toggle i');
+            if (document.body.classList.contains('light-mode')) {
+                icon.classList.remove('fa-moon'); icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun'); icon.classList.add('fa-moon');
+            }
+        }
+
+        function startApp() {
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('appPage').classList.remove('hidden');
+            document.getElementById('appPage').classList.add('fade-in');
+            
+            // SHOW CHAT BUTTON
+            document.getElementById('chatBtn').style.display = 'flex';
+        }
+
+        function backToHome() {
+            document.getElementById('appPage').classList.add('hidden');
+            document.getElementById('landingPage').classList.remove('hidden');
+            document.getElementById('landingPage').classList.add('fade-in');
+            resetScan();
+            
+            // HIDE CHAT BUTTON & WINDOW
+            document.getElementById('chatBtn').style.display = 'none';
+            document.getElementById('chatWindow').classList.remove('open');
+        }
+
+        const dragOverlay = document.getElementById('dragOverlay');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => window.addEventListener(e, preventDefaults, false));
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        window.addEventListener('dragenter', () => {
+            if (!document.getElementById('appPage').classList.contains('hidden')) dragOverlay.classList.add('active');
+        });
+        dragOverlay.addEventListener('dragleave', (e) => { if (e.relatedTarget === null) dragOverlay.classList.remove('active'); });
+        window.addEventListener('drop', (e) => {
+            dragOverlay.classList.remove('active');
+            if (!document.getElementById('landingPage').classList.contains('hidden')) startApp();
+            if (e.dataTransfer.files.length) { resetScan(); handleFile(e.dataTransfer.files[0]); }
+        });
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+        function handleFile(file) {
+            storedFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('previewContainer').style.display = 'block';
+                document.getElementById('dropZone').style.display = 'none';
+                document.getElementById('analyzeBtn').style.display = 'block';
+                document.getElementById('newScanBtn').style.display = 'none';
+                document.getElementById('diagramSection').style.display = 'none';
+                document.getElementById('diagramSection').classList.remove('active');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function analyzeImage() {
+            if (!storedFile) return alert("Upload an image first.");
+            const btn = document.getElementById('analyzeBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', storedFile);
+
+            try {
+                const response = await fetch(`${API_URL}/predict`, { method: 'POST', body: formData });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                const diag = document.getElementById('diagramSection');
+                diag.style.display = 'flex';
+                void diag.offsetWidth;
+
+                document.getElementById('resClass').innerText = data.class;
+                document.getElementById('resConfText').innerText = `Confidence: ${data.confidence}`;
+                document.getElementById('resConfBar').style.width = data.confidence;
+                document.getElementById('resDesc').innerText = data.description;
+
+                const redBox = document.getElementById('boxRelated');
+                if (data.class === 'Normal') {
+                    redBox.style.display = 'none';
+                } else {
+                    redBox.style.display = 'block';
+                    document.getElementById('resRelated').innerText = data.related_diseases;
+                }
+
+                const tipList = document.getElementById('resTips');
+                tipList.innerHTML = "";
+                data.tips.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.innerText = tip;
+                    tipList.appendChild(li);
+                });
+
+                diag.classList.add('active');
+                diag.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                currentContext = data.class;
+                addBotMessage(`I detected **${data.class}**. If you have questions, click the chat bubble!`);
+
+                btn.style.display = 'none';
+                document.getElementById('newScanBtn').style.display = 'block';
+
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function resetScan() {
+            storedFile = null;
+            document.getElementById('fileInput').value = "";
+            currentContext = "General Eye Health";
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('dropZone').style.display = 'block';
+            document.getElementById('diagramSection').classList.remove('active');
+            document.getElementById('diagramSection').style.display = 'none';
+            document.getElementById('analyzeBtn').style.display = 'block';
+            document.getElementById('newScanBtn').style.display = 'none';
+            const body = document.getElementById('chatBody');
+            body.innerHTML += `<div class="bot-msg" style="opacity:0.6; font-size:0.8rem; text-align:center; background:none; border:none;">--- New Scan Started ---</div>`;
+            body.scrollTop = body.scrollHeight;
+        }
+
+        function toggleChat() { document.getElementById('chatWindow').classList.toggle('open'); }
+        function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const body = document.getElementById('chatBody');
+            body.innerHTML += `<div class="user-msg">${msg}</div>`;
+            input.value = "";
+            body.scrollTop = body.scrollHeight;
+
+            const loadId = 'load' + Date.now();
+            body.innerHTML += `<div class="bot-msg" id="${loadId}">...</div>`;
+            body.scrollTop = body.scrollHeight;
+
+            try {
+                const res = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg, context: currentContext })
+                });
+                const data = await res.json();
+                document.getElementById(loadId).remove();
+                addBotMessage(data.reply);
+            } catch (e) {
+                document.getElementById(loadId).remove();
+                addBotMessage("Connection error.");
+            }
+        }
+
+        function addBotMessage(text) {
+            const cleanText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+            const body = document.getElementById('chatBody');
+            body.innerHTML += `<div class="bot-msg">${cleanText}</div>`;
+            body.scrollTop = body.scrollHeight;
+        }
+    </script>
+</body>
+</html>
